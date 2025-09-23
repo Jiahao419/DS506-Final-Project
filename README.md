@@ -15,6 +15,7 @@ Flight delays are a common issue in air travel, causing inconvenience for passen
 We will collect data from publicly available sources:
 - **Bureau of Transportation Statistics (BTS)**: On-time performance data, including scheduled and actual departure/arrival times, delays, airline, and airport information.
 - **NOAA / National Weather Service**: Weather conditions (temperature, precipitation, wind speed, visibility) for major airports.
+- **Federal Aviation Administartion**: airport status, airspace system performance metrics, and airport operational statistics.
 
 ## Data Cleaning
 - Handle missing and inconsistent data (e.g. missing weather values).
@@ -56,3 +57,4 @@ Model performance will be evaluated using accuracy, precision, recall, and AUC.
 ## Team Members
 - Jiahao Liu 
 - Xinyi Wang
+- Abdulelah (Abdul) Hamdi
