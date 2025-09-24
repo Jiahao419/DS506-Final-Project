@@ -58,3 +58,4 @@ Model performance will be evaluated using accuracy, precision, recall, and AUC.
 - Jiahao Liu 
 - Xinyi Wang
 - Abdulelah (Abdul) Hamdi
+- Nathan Arlan Djunaedi
