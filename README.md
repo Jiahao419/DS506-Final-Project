@@ -183,6 +183,34 @@ The goal is to develop a robust, reproducible model that can estimate the probab
 
 ---
 
+## ⚠️ Current Challenges and Limitations
+
+Although the current pipeline successfully integrates flight and weather data and produces consistent results across models, several issues remain:
+
+1. **Low AUC / Model Performance Ceiling**  
+   - Even with additional weather and engineered features, the AUC only reaches about **0.59**.  
+   - This indicates the models capture some but not all underlying delay factors — suggesting that other variables (like air traffic control, carrier policies, or airport-level congestion) may be missing.
+
+2. **Imbalanced Classes**  
+   - Only around **18% of flights are delayed**, leading to bias toward the majority (non-delayed) class.  
+   - Models tend to have high accuracy but low recall for delays.
+
+3. **Temporal Dependency**  
+   - Flight delays often depend on time sequences (e.g., previous flight delays causing propagation).  
+   - Current models treat all rows independently, ignoring sequential or temporal correlations.
+
+4. **Weather Feature Granularity**  
+   - Daily-aggregated weather data may not fully represent real-time conditions at departure/arrival hours.  
+   - Hourly weather data could potentially improve sensitivity.
+
+5. **Operational Heterogeneity**  
+   - Airlines and airports behave differently; model performance varies by region and carrier.  
+   - Further stratified or per-airport modeling could improve robustness.
+
+These challenges explain why the results, while consistent, still have limited predictive power (AUC < 0.6) and motivate further experimentation.
+
+---
+
 ## 🧠 Next Steps
 - Add **temporal validation** (train early months → test later months).  
 - Investigate **class imbalance** using SMOTE or reweighting.  
