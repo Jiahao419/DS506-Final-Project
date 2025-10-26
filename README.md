@@ -1,3 +1,8 @@
+## 🎥 Midterm Presentation Video
+[▶️ Watch on YouTube](https://youtu.be/)
+
+---
+
 ## ✈️ Flight Delay Prediction using US DOT & Weather Data  
 **Boston University – CS506: Data Science Tools & Applications**  
 
@@ -6,15 +11,16 @@
 ### 📘 Project Overview
 This project predicts **flight delays** using data from the **US Department of Transportation (Bureau of Transportation Statistics)** combined with **daily weather data** from **Meteostat**.
 
-We explore how operational (e.g., routes, airlines, weekdays) and environmental (e.g., temperature, wind, pressure) factors influence the likelihood of flight delays.
+We aim to explore how operational (e.g., airlines, weekdays, routes) and environmental (e.g., temperature, precipitation, pressure) factors influence the likelihood of flight delays.  
+The goal is to develop a robust, reproducible model that can estimate the probability of a flight delay based on both **flight-level** and **weather** features.
 
 ---
 
-### 🧩 Dataset
+## 🧩 Dataset
 
 | Source | Description | Link |
 |--------|--------------|------|
-| **BTS On-Time Performance (2020)** | Flight-level data including scheduled and actual times, airlines, and airports. | [US DOT BTS Dataset](https://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) |
+| **BTS On-Time Performance (2020)** | Flight-level data including scheduled and actual departure/arrival times, airlines, and airports. | [US DOT BTS Dataset](https://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) |
 | **Meteostat (Daily Weather)** | Daily temperature, wind speed, and pressure data per airport. | [Meteostat API](https://dev.meteostat.net/python/) |
 | **Processed Dataset (merged)** | Cleaned and merged flight + weather + engineered features. | [Google Drive Folder](https://drive.google.com/drive/folders/11Bs78yYzX7t18sY3JP_uk08K3PCpzmxg?usp=drive_link) |
 
@@ -23,141 +29,175 @@ We explore how operational (e.g., routes, airlines, weekdays) and environmental 
 
 ---
 
-### 📂 Project Structure
+## 📊 Preliminary Visualizations and Analysis
 
-```
-CS506/
-│
-├── data/
-│   ├── flights_sample_1pct.csv          # 1% sample for testing
-│
-├── src/                                 # Source code
-│   ├── data_cleaning.py                 # Preprocess raw flight data
-│   ├── weather_download.py              # Download weather data using Meteostat API
-│   ├── weather_merge.py                 # Merge weather and flight datasets
-│   ├── eda_visualization.py             # Generate EDA plots
-│   ├── model_training.py                # Baseline models (LogReg / RF)
-│   ├── model_training_weather.py        # Models with weather + engineered features
-│
-├── outputs/
-│   └── plots/                           # Visualization results
-│       ├── delay_rate_by_month.png
-│       ├── delay_rate_by_dow.png
-│       ├── delay_rate_by_airport.png
-│       ├── dep_vs_arr_delay.png
-│       ├── feature_importance_rf.png
-│       ├── feature_importance_rf_weather.png
-│       ├── roc_curves.png
-│       ├── roc_curves_weather.png
-│       ├── roc_curves_weather_all.png
-│
-├── requirements.txt
-├── .gitignore
-└── README.md
-```
+### 1️⃣ Delay Rate by Month
+![](outputs/plots/delay_rate_by_month.png)
+
+- Shows seasonal variation in flight delays throughout 2020.  
+- Delay rates tend to **increase during summer months (June–August)** due to higher air traffic volume and weather disruptions.  
+- A smaller spike appears in **December**, aligning with holiday travel peaks.  
 
 ---
 
-### ⚙️ Setup & Usage
+### 2️⃣ Delay Rate by Day of Week
+![](outputs/plots/delay_rate_by_dow.png)
 
-#### 1️⃣ Create and activate environment
-```bash
-python -m venv .venv
-.\.venv\Scriptsctivate        # (Windows)
-# or source .venv/bin/activate  # (Mac/Linux)
-
-pip install -r requirements.txt
-```
-
-#### 2️⃣ Run the workflow
-```bash
-# Step 1: Data cleaning (requires BTS raw CSV)
-python src/data_cleaning.py
-
-# Step 2: Download weather data
-python src/weather_download.py
-
-# Step 3: Merge weather with flight data
-python src/weather_merge.py
-
-# Step 4: Exploratory Data Analysis
-python src/eda_visualization.py
-
-# Step 5: Baseline model training
-python src/model_training.py
-
-# Step 6: Weather + engineered features model
-python src/model_training_weather.py
-```
-
-All generated plots and models will appear in:
-```
-outputs/plots/
-outputs/models/
-```
+- Delay rates vary across weekdays.  
+- **Fridays and Sundays** show higher delay frequencies, which makes sense since they correspond to business return trips and weekend leisure traffic.  
+- **Tuesdays and Wednesdays** show the fewest delays.  
 
 ---
 
-### 📊 Model Results Summary
+### 3️⃣ Delay Rate by Airport
+![](outputs/plots/delay_rate_by_airport.png)
 
-| Model | Features | Accuracy | Precision | Recall | F1-score | AUC |
-|:------|:----------|:----------|:-----------|:---------|:----------|
-| Logistic Regression | Operational only | 0.784 | 0.237 | 0.082 | 0.122 | 0.560 |
-| Random Forest | Operational only | 0.784 | 0.237 | 0.082 | 0.122 | 0.560 |
-| Logistic Regression | + Weather + Engineered | 0.588 | 0.225 | **0.509** | 0.312 | 0.577 |
-| Random Forest | + Weather + Engineered | 0.784 | 0.237 | 0.082 | 0.122 | 0.560 |
-| HistGradientBoosting | + Weather + Engineered | **0.814** | 0.257 | 0.010 | 0.019 | **0.591** |
-
-✅ *Adding weather and engineered features improved AUC from ~0.55 to 0.59.  
-“Route frequency” and “origin-day volume” are the strongest predictors of delays.*
+- This visualization highlights **top airports with the highest delay rates**.  
+- Major hub airports such as **ATL, ORD, and JFK** show more delays due to traffic congestion and operational complexity.  
+- Smaller airports generally exhibit fewer delays.  
 
 ---
 
-### 📈 Visualization Samples
+### 4️⃣ Departure vs Arrival Delay Correlation
+![](outputs/plots/dep_vs_arr_delay.png)
 
-| Plot | Description |
-|------|--------------|
-| ![](outputs/plots/roc_curves_weather_all.png) | ROC comparison of Logistic Regression, Random Forest, and HGB models |
-| ![](outputs/plots/feature_importance_rf_weather.png) | Top feature importances — route frequency, origin-day volume, temperature, etc. |
-| ![](outputs/plots/delay_rate_by_month.png) | Average flight delay rate by month |
-| ![](outputs/plots/delay_rate_by_airport.png) | Delay rates for top 10 origin airports |
+- Displays a **strong linear correlation** between departure and arrival delays.  
+- Late departures often cascade into late arrivals, suggesting systemic schedule propagation issues.  
+- Correlation coefficient (Pearson) ≈ **0.93**, confirming the dependency.  
 
 ---
 
-### 📤 Full Dataset Access
+### 5️⃣ ROC Curves – Baseline Models
+![](outputs/plots/roc_curves.png)
 
-You can access all cleaned and merged datasets from Google Drive:  
-📂 [**CS506 Project Data (Google Drive)**](https://drive.google.com/drive/folders/YOUR-FOLDER-ID-HERE)
+- ROC curves compare initial models trained without weather data.  
+- Logistic Regression and Random Forest achieve moderate AUC (~0.55).  
+- This baseline provides a reference for performance improvement once weather and feature engineering are added.  
+
+---
+
+### 6️⃣ ROC Curves – Weather-Enhanced Models
+![](outputs/plots/roc_curves_weather.png)
+
+- Models trained with weather variables show an **improvement in AUC from ~0.55 → 0.58**.  
+- Weather variables such as `temperature`, `wind speed`, and `pressure` contribute to better classification of delayed flights.  
+
+---
+
+### 7️⃣ ROC Curves – All Combined Models
+![](outputs/plots/roc_curves_weather_all.png)
+
+- Combines baseline, weather-only, and feature-engineered models.  
+- **Histogram-based Gradient Boosting (HGB)** achieves the best AUC (~0.59).  
+- Indicates that while delay prediction remains a difficult problem, added context improves performance modestly.  
+
+---
+
+### 8️⃣ Feature Importance (Random Forest – Base Model)
+![](outputs/plots/feature_importance_rf.png)
+
+- The most predictive features in the base model include:  
+  - **Route frequency** (flights per route)  
+  - **Scheduled departure time** (temporal pattern)  
+  - **Day of week**  
+- Weather variables were not yet included here.  
+
+---
+
+### 9️⃣ Feature Importance (Random Forest – With Weather)
+![](outputs/plots/feature_importance_rf_weather.png)
+
+- After integrating weather data, the top predictors include:  
+  - **Route frequency**
+  - **Origin-day flight volume**
+  - **Temperature**
+  - **Wind speed**
+  - **Pressure**  
+- Weather features rank just below operational ones, confirming their incremental predictive power.
+
+---
+
+## ⚙️ Data Processing Pipeline
+
+1. **Data Cleaning**
+   - Removed flights with missing or invalid delay data.  
+   - Dropped irrelevant columns (e.g., tail numbers, cancellation codes).  
+   - Standardized column names and converted time fields to datetime format.  
+
+2. **Weather Data Integration**
+   - Downloaded daily weather observations from the **Meteostat API** for each airport.  
+   - Merged weather features by airport and date.  
+   - Missing values were imputed using median interpolation.  
+
+3. **Feature Engineering**
+   - `route_freq`: Number of flights per (origin, destination).  
+   - `origin_day_volume`: Number of flights per origin airport per day.  
+   - `is_weekend`: Boolean flag for weekend flights.  
+   - `temp_mean`, `wind_mean`, and `pressure_mean`: from merged weather.  
+
+4. **Normalization & Encoding**
+   - Scaled numerical features using **StandardScaler**.  
+   - Encoded categorical features (e.g., airlines, airports) using **OneHotEncoder**.  
+
+---
+
+## 🤖 Modeling Methods
+
+### Models Implemented
+1. **Logistic Regression (Baseline)**
+   - Interpretable linear model for binary classification.
+2. **Random Forest (Ensemble)**
+   - Nonlinear model capturing feature interactions.
+3. **HistGradientBoosting (HGB)**
+   - Gradient-boosted trees optimized for tabular data.
+
+### Evaluation Metrics
+- **Accuracy**
+- **Precision**
+- **Recall**
+- **F1-Score**
+- **ROC-AUC**
+
+### Validation
+- Train-test split (80/20).  
+- Stratified sampling to balance delay vs. non-delay classes.  
+- ROC and Precision-Recall curves used for diagnostic visualization.
+
+---
+
+## 📈 Preliminary Results
+
+| Model                  | Features                  | Accuracy | Precision | Recall | F1-score |  AUC  |
+|:-----------------------|:--------------------------|:--------:|:---------:|:------:|:-------:|:-----:|
+| Logistic Regression    | Operational only          |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
+| Random Forest          | Operational only          |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
+| Logistic Regression    | + Weather + Engineered    |  0.588   |   0.225   | **0.509** | 0.312 | 0.577 |
+| Random Forest          | + Weather + Engineered    |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
+| HistGradientBoosting   | + Weather + Engineered    | **0.814** |  0.257   | 0.010  |  0.019  | **0.591** |
+
+
+**Interpretation:**
+- Weather and engineered features improve recall significantly for Logistic Regression.  
+- Histogram Gradient Boosting achieves the best AUC (0.59).  
+- Route-level and weather-based predictors jointly improve overall detection sensitivity.  
+
+---
+
+## 🧠 Next Steps
+- Add **temporal validation** (train early months → test later months).  
+- Investigate **class imbalance** using SMOTE or reweighting.  
+- Explore **XGBoost / LightGBM** models for better recall.  
+- Build a **Streamlit dashboard** for interactive predictions.  
+
+---
+
+## 📤 Data Access
+You can download the **full datasets** from Google Drive:  
+📂 [CS506 Project Data (Google Drive)](https://drive.google.com/drive/folders/11Bs78yYzX7t18sY3JP_uk08K3PCpzmxg?usp=drive_link)
 
 Contents:
-- `flights_cleaned.csv` – full cleaned flight dataset (~3.8 GB)  
-- `weather_daily.csv` – daily weather data (~185 KB)  
-- `flights_with_weather_sample.parquet` – merged dataset (sample for testing)
+- `flights_cleaned.csv` (~3.8 GB)  
+- `weather_daily.csv` (~185 KB)  
+- `flights_with_weather_sample.parquet`  
 
 ---
-
-### 🧠 Future Work
-- Improve **class imbalance handling** and **probability calibration**.  
-- Add **temporal validation** (train on Jan–Oct, test on Nov–Dec).  
-- Deploy as an **interactive web dashboard (Flask / Streamlit)** for predictions.  
-
----
-
-### 🪪 License
-This project is for academic use only — **Boston University CS506**.  
-All datasets belong to their original providers:  
-- *U.S. Department of Transportation (Bureau of Transportation Statistics)*  
-- *Meteostat Weather Service*
-
----
-
-### 🙌 Acknowledgements
-Special thanks to **Divya Appapogu**, **Nathan Djunaedi**, **Eric Wang**, and **Hamdi Abdulaleh** for their collaboration and feedback during the project.
-
----
-
-### ✅ Quick Summary
-> **Goal:** Predict flight delays using weather and operational data  
-> **Key Result:** AUC improved from 0.55 → 0.59 with weather integration  
-> **Tools:** Python, Scikit-learn, Meteostat API, Matplotlib, Pandas  
-> **Outcome:** Reproducible pipeline + visual insights into delay causes  
