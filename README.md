@@ -1,10 +1,72 @@
-## 🎥 Midterm Presentation Video
-[▶️ Watch on YouTube](https://youtu.be/)
+
+## ✈️ Flight Delay Prediction using US DOT & Weather Data  
+**Boston University – CS506: Data Science Tools & Applications**
 
 ---
 
-## ✈️ Flight Delay Prediction using US DOT & Weather Data  
-**Boston University – CS506: Data Science Tools & Applications**  
+## ⚙️ Data Processing Pipeline
+
+1. **Data Cleaning**
+   - Removed flights with missing or invalid delay data.  
+   - Dropped irrelevant columns (e.g., tail numbers, cancellation codes).  
+   - Standardized column names and converted time fields to datetime format.  
+
+2. **Weather Data Integration**
+   - Downloaded daily weather observations from the **Meteostat API** for each airport.  
+   - Merged weather features by airport and date.  
+   - Missing values were imputed using median interpolation.  
+
+3. **Feature Engineering**
+   - `route_freq`: Number of flights per (origin, destination).  
+   - `origin_day_volume`: Number of flights per origin airport per day.  
+   - `is_weekend`: Boolean flag for weekend flights.  
+   - `temp_mean`, `wind_mean`, and `pressure_mean`: from merged weather.  
+
+4. **Normalization & Encoding**
+   - Scaled numerical features using **StandardScaler**.  
+   - Encoded categorical features (e.g., airlines, airports) using **OneHotEncoder**.  
+
+---
+
+## 🤖 Modeling Methods
+
+### Models Implemented
+1. **Logistic Regression (Baseline)**
+   - Interpretable linear model for binary classification.
+2. **Random Forest (Ensemble)**
+   - Nonlinear model capturing feature interactions.
+3. **HistGradientBoosting (HGB)**
+   - Gradient-boosted trees optimized for tabular data.
+
+### Evaluation Metrics
+- **Accuracy**
+- **Precision**
+- **Recall**
+- **F1-Score**
+- **ROC-AUC**
+
+### Validation
+- Train-test split (80/20).  
+- Stratified sampling to balance delay vs. non-delay classes.  
+- ROC and Precision-Recall curves used for diagnostic visualization.
+
+---
+
+## 📈 Preliminary Results
+
+| Model                  | Features                  | Accuracy | Precision | Recall | F1-score |  AUC  |
+|:-----------------------|:--------------------------|:--------:|:---------:|:------:|:-------:|:-----:|
+| Logistic Regression    | Operational only          |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
+| Random Forest          | Operational only          |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
+| Logistic Regression    | + Weather + Engineered    |  0.588   |   0.225   | **0.509** | 0.312 | 0.577 |
+| Random Forest          | + Weather + Engineered    |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
+| HistGradientBoosting   | + Weather + Engineered    | **0.814** |  0.257   | 0.010  |  0.019  | **0.591** |
+
+
+**Interpretation:**
+- Weather and engineered features improve recall significantly for Logistic Regression.  
+- Histogram Gradient Boosting achieves the best AUC (0.59).  
+- Route-level and weather-based predictors jointly improve overall detection sensitivity.
 
 ---
 
@@ -114,72 +176,6 @@ The goal is to develop a robust, reproducible model that can estimate the probab
   - **Wind speed**
   - **Pressure**  
 - Weather features rank just below operational ones, confirming their incremental predictive power.
-
----
-
-## ⚙️ Data Processing Pipeline
-
-1. **Data Cleaning**
-   - Removed flights with missing or invalid delay data.  
-   - Dropped irrelevant columns (e.g., tail numbers, cancellation codes).  
-   - Standardized column names and converted time fields to datetime format.  
-
-2. **Weather Data Integration**
-   - Downloaded daily weather observations from the **Meteostat API** for each airport.  
-   - Merged weather features by airport and date.  
-   - Missing values were imputed using median interpolation.  
-
-3. **Feature Engineering**
-   - `route_freq`: Number of flights per (origin, destination).  
-   - `origin_day_volume`: Number of flights per origin airport per day.  
-   - `is_weekend`: Boolean flag for weekend flights.  
-   - `temp_mean`, `wind_mean`, and `pressure_mean`: from merged weather.  
-
-4. **Normalization & Encoding**
-   - Scaled numerical features using **StandardScaler**.  
-   - Encoded categorical features (e.g., airlines, airports) using **OneHotEncoder**.  
-
----
-
-## 🤖 Modeling Methods
-
-### Models Implemented
-1. **Logistic Regression (Baseline)**
-   - Interpretable linear model for binary classification.
-2. **Random Forest (Ensemble)**
-   - Nonlinear model capturing feature interactions.
-3. **HistGradientBoosting (HGB)**
-   - Gradient-boosted trees optimized for tabular data.
-
-### Evaluation Metrics
-- **Accuracy**
-- **Precision**
-- **Recall**
-- **F1-Score**
-- **ROC-AUC**
-
-### Validation
-- Train-test split (80/20).  
-- Stratified sampling to balance delay vs. non-delay classes.  
-- ROC and Precision-Recall curves used for diagnostic visualization.
-
----
-
-## 📈 Preliminary Results
-
-| Model                  | Features                  | Accuracy | Precision | Recall | F1-score |  AUC  |
-|:-----------------------|:--------------------------|:--------:|:---------:|:------:|:-------:|:-----:|
-| Logistic Regression    | Operational only          |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
-| Random Forest          | Operational only          |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
-| Logistic Regression    | + Weather + Engineered    |  0.588   |   0.225   | **0.509** | 0.312 | 0.577 |
-| Random Forest          | + Weather + Engineered    |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
-| HistGradientBoosting   | + Weather + Engineered    | **0.814** |  0.257   | 0.010  |  0.019  | **0.591** |
-
-
-**Interpretation:**
-- Weather and engineered features improve recall significantly for Logistic Regression.  
-- Histogram Gradient Boosting achieves the best AUC (0.59).  
-- Route-level and weather-based predictors jointly improve overall detection sensitivity.  
 
 ---
 
