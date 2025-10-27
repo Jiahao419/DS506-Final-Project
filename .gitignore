@@ -1,3 +1,4 @@
 *.zip
 *.csv
+!flights_sample_1pct.csv
 *.DS_Store
