@@ -4,6 +4,27 @@
 
 ---
 
+### 📘 Project Overview
+This project predicts **flight delays** using data from the **US Department of Transportation (Bureau of Transportation Statistics)** combined with **daily weather data** from **Meteostat**.
+
+We aim to explore how operational (e.g., airlines, weekdays, routes) and environmental (e.g., temperature, precipitation, pressure) factors influence the likelihood of flight delays.  
+The goal is to develop a robust, reproducible model that can estimate the probability of a flight delay based on both **flight-level** and **weather** features.
+
+---
+
+## 🧩 Dataset
+
+| Source | Description | Link |
+|--------|--------------|------|
+| **BTS On-Time Performance (2020)** | Flight-level data including scheduled and actual departure/arrival times, airlines, and airports. | [US DOT BTS Dataset](https://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) |
+| **Meteostat (Daily Weather)** | Daily temperature, wind speed, and pressure data per airport. | [Meteostat API](https://dev.meteostat.net/python/) |
+| **Processed Dataset (merged)** | Cleaned and merged flight + weather + engineered features. | [Google Drive Folder](https://drive.google.com/drive/folders/11Bs78yYzX7t18sY3JP_uk08K3PCpzmxg?usp=drive_link) |
+
+> ⚠️ Due to GitHub’s 100 MB file limit, only a **1% sample dataset** (`flights_sample_1pct.csv`) is stored in this repo for testing.  
+> The **full datasets** are hosted on Google Drive.
+
+---
+
 ## ⚙️ Data Processing Pipeline
 
 1. **Data Cleaning**
@@ -68,26 +89,6 @@
 - Histogram Gradient Boosting achieves the best AUC (0.59).  
 - Route-level and weather-based predictors jointly improve overall detection sensitivity.
 
----
-
-### 📘 Project Overview
-This project predicts **flight delays** using data from the **US Department of Transportation (Bureau of Transportation Statistics)** combined with **daily weather data** from **Meteostat**.
-
-We aim to explore how operational (e.g., airlines, weekdays, routes) and environmental (e.g., temperature, precipitation, pressure) factors influence the likelihood of flight delays.  
-The goal is to develop a robust, reproducible model that can estimate the probability of a flight delay based on both **flight-level** and **weather** features.
-
----
-
-## 🧩 Dataset
-
-| Source | Description | Link |
-|--------|--------------|------|
-| **BTS On-Time Performance (2020)** | Flight-level data including scheduled and actual departure/arrival times, airlines, and airports. | [US DOT BTS Dataset](https://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) |
-| **Meteostat (Daily Weather)** | Daily temperature, wind speed, and pressure data per airport. | [Meteostat API](https://dev.meteostat.net/python/) |
-| **Processed Dataset (merged)** | Cleaned and merged flight + weather + engineered features. | [Google Drive Folder](https://drive.google.com/drive/folders/11Bs78yYzX7t18sY3JP_uk08K3PCpzmxg?usp=drive_link) |
-
-> ⚠️ Due to GitHub’s 100 MB file limit, only a **1% sample dataset** (`flights_sample_1pct.csv`) is stored in this repo for testing.  
-> The **full datasets** are hosted on Google Drive.
 
 ---
 
