@@ -20,7 +20,7 @@ The goal is to develop a robust, reproducible model that can estimate the probab
 
 | Source | Description | Link |
 |--------|--------------|------|
-| **BTS On-Time Performance (2020)** | Flight-level data including scheduled and actual departure/arrival times, airlines, and airports. | [US DOT BTS Dataset](https://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) |
+| **BTS On-Time Performance (2020)** | Flight data including scheduled and actual departure/arrival times, airlines, and airports. | [US DOT BTS Dataset](https://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) |
 | **Meteostat (Daily Weather)** | Daily temperature, wind speed, and pressure data per airport. | [Meteostat API](https://dev.meteostat.net/python/) |
 | **Processed Dataset (merged)** | Cleaned and merged flight + weather + engineered features. | [Google Drive Folder](https://drive.google.com/drive/folders/11Bs78yYzX7t18sY3JP_uk08K3PCpzmxg?usp=drive_link) |
 
@@ -212,6 +212,7 @@ These challenges explain why the results, while consistent, still have limited p
 ---
 
 ## 🧠 Next Steps
+- Add weather information for destination and route. 
 - Add **temporal validation** (train early months → test later months).  
 - Investigate **class imbalance** using SMOTE or reweighting.  
 - Explore **XGBoost / LightGBM** models for better recall.  
