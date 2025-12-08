@@ -1,0 +1,50 @@
+# ===== Python cache & env =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+*.joblib
+*.log
+.venv/
+venv/
+.env
+
+
+# ===== Large raw data =====
+data/
+!data/flights_sample_1pct.csv     # keep only the small sample file
+
+# ===== Models (too large for GitHub) =====
+outputs/models/
+
+# ===== Large parquet data =====
+outputs/*.parquet
+outputs/preview/
+outputs/flights_preprocessed.parquet
+outputs/flights_with_weather_sample.parquet
+
+# ===== Plots (keep .png for reports) =====z
+!outputs/plots/*.png
+
+# ===== Jupyter checkpoints =====
+.ipynb_checkpoints/
+
+# ===== OS files =====
+.DS_Store
+Thumbs.db
+
+outputs/models/
+
+__pycache__/
+
+data/
+outputs/flights_preprocessed.parquet
+outputs/flights_with_weather_sample.parquet
+outputs/models/
+
+__pycache__/
+*.pyc
+*.pkl
+*.joblib
+*.log
