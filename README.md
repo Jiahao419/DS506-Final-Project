@@ -9,218 +9,258 @@
 ---
 
 ### 📘 Project Overview
-This project predicts **flight delays** using data from the **US Department of Transportation (Bureau of Transportation Statistics)** combined with **daily weather data** from **Meteostat**.
+This project predicts **flight delays** by combining **US DOT On-Time Performance** data with **daily origin & destination weather** and several **engineered operational features**.
 
-We aim to explore how operational (e.g., airlines, weekdays, routes) and environmental (e.g., temperature, precipitation, pressure) factors influence the likelihood of flight delays.  
-The goal is to develop a robust, reproducible model that can estimate the probability of a flight delay based on both **flight-level** and **weather** features.
+We study how airline, route, congestion, calendar effects, and coarse-grained weather jointly affect the probability that a flight arrives **15+ minutes late**.  
+The goal is not to perfectly predict every delay (which is extremely hard with public data), but to build a **clean, reproducible modeling pipeline** and quantify **how much signal** we can extract from these factors.
 
 ---
 
 ## 🧩 Dataset
 
 | Source | Description | Link |
-|--------|--------------|------|
-| **BTS On-Time Performance (2020)** | Flight data including scheduled and actual departure/arrival times, airlines, and airports. | [US DOT BTS Dataset](https://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) |
-| **Meteostat (Daily Weather)** | Daily temperature, wind speed, and pressure data per airport. | [Meteostat API](https://dev.meteostat.net/python/) |
-| **Processed Dataset (merged)** | Cleaned and merged flight + weather + engineered features. | [Google Drive Folder](https://drive.google.com/drive/folders/11Bs78yYzX7t18sY3JP_uk08K3PCpzmxg?usp=drive_link) |
+|--------|-------------|------|
+| **BTS On-Time Performance (2020)** | Flight-level data including scheduled/actual departure & arrival times, airlines, and airports. | [US DOT BTS Dataset](https://www.transtats.bts.gov/OT_Delay/OT_DelayCause1.asp) |
+| **Meteostat (Daily Weather)** | Daily weather (temperature, precipitation, wind, pressure, etc.) at major US airports. | [Meteostat API](https://dev.meteostat.net/python/) |
+| **Processed Dataset (merged)** | Cleaned flights + **origin & destination daily weather** + engineered features (route stats, congestion proxies, target encodings). | [Google Drive Folder](https://drive.google.com/drive/folders/11Bs78yYzX7t18sY3JP_uk08K3PCpzmxg?usp=drive_link) |
 
-> ⚠️ Due to GitHub’s 100 MB file limit, only a **1% sample dataset** (`flights_sample_1pct.csv`) is stored in this repo for testing.  
-> The **full datasets** are hosted on Google Drive.
+> ⚠️ Because of GitHub’s 100 MB limit, the repo only includes a **1% sample** (`data/flights_sample_1pct.csv`) for testing.  
+> The **full cleaned & merged datasets** live in the Google Drive folder above.
 
 ---
 
-## 📊 Preliminary Visualizations and Analysis
+## 📊 Exploratory Analysis & Intuition
 
 ### 1️⃣ Delay Rate by Month
 ![](outputs/plots/delay_rate_by_month.png)
 
-- Shows seasonal variation in flight delays throughout 2020.  
-- Delay rates tend to **increase during summer months (June–August)** due to higher air traffic volume and weather disruptions.  
-- A smaller spike appears in **December**, aligning with holiday travel peaks.  
+- Delay rates show **strong seasonality**.  
+- Peaks around **June–July** and again in **December**, consistent with summer storms and holiday traffic.  
 
 ---
 
 ### 2️⃣ Delay Rate by Day of Week
 ![](outputs/plots/delay_rate_by_dow.png)
 
-- Delay rates vary across weekdays.  
-- **Fridays and Sundays** show higher delay frequencies, which makes sense since they correspond to business return trips and weekend leisure traffic.  
-- **Tuesdays and Wednesdays** show the fewest delays.  
+- **Fridays and Sundays** have the highest delay rates, aligning with commuting + weekend leisure travel.  
+- **Tuesdays/Wednesdays** are the least delayed days.
 
 ---
 
-### 3️⃣ Delay Rate by Airport
+### 3️⃣ Delay Rate for Top Origin Airports
 ![](outputs/plots/delay_rate_by_airport.png)
 
-- This visualization highlights **top airports with the highest delay rates**.  
-- Major hub airports such as **ATL, ORD, and JFK** show more delays due to traffic congestion and operational complexity.  
-- Smaller airports generally exhibit fewer delays.  
+- Large hubs such as **ATL, DFW, ORD, DEN** have delay rates above 20%.  
+- Smaller or less congested airports show lower delay rates.
 
 ---
 
-### 4️⃣ Departure vs Arrival Delay Correlation
+### 4️⃣ Departure vs. Arrival Delay
 ![](outputs/plots/dep_vs_arr_delay.png)
 
-- Displays a **strong linear correlation** between departure and arrival delays.  
-- Late departures often cascade into late arrivals, suggesting systemic schedule propagation issues.  
-- Correlation coefficient (Pearson) ≈ **0.93**, confirming the dependency.  
+- Strong linear relationship: late departures almost always translate into late arrivals.  
+- Pearson correlation ≈ **0.93**, confirming heavy delay propagation along the route network.
 
 ---
 
-### 5️⃣ ROC Curves – Baseline Models
+## 🧮 Modeling Setups
+
+We build two main modeling pipelines:
+
+1. **Baseline (Operational Only)** – pre-flight features only  
+   - Airline (`IATA_Code_Operating_Airline`)  
+   - Origin, Destination  
+   - Month, DayOfWeek (+ optional `DepHour` when available)  
+   - **Engineered**:  
+     - `is_weekend`  
+     - `route_freq` (historical frequency of the origin–destination pair)
+
+2. **Weather + Engineered Pipeline** – baseline + richer structure  
+   - All baseline features above  
+   - **Origin & Destination daily weather** from Meteostat:  
+     `tavg, tmin, tmax, prcp, snow, wspd, wdir, wpgt, pres, tsun`  
+     plus `dest_*` counterparts from the destination airport merge  
+   - **Engineered congestion & target encodings**:  
+     - `origin_day_volume` – # flights per (Origin, FlightDate), proxy for local congestion  
+     - `te_origin_month` – target encoding of (Origin, Month) → historical delay rate  
+     - `te_route` – target encoding of (Origin, Dest) → historical route delay rate  
+
+### Data Processing & Encoding
+
+- **Cleaning & merging**
+  - `data_cleaning.py` generates `outputs/flights_preprocessed.parquet` with clean delay labels.  
+  - `weather_download.py` downloads daily airport weather (2020).  
+  - `weather_merge.py` merges **origin & destination** weather into flights, producing  
+    `outputs/flights_with_weather_sample.parquet` and (optionally) partitioned full data.
+
+- **Categorical encoding**
+  - Airlines, Origin, Dest are converted to pandas `category` and stored as integer codes.
+
+- **Imputation & scaling**
+  - For weather and engineered numeric features we use **median imputation fit on the train split only** (via `SimpleImputer`).  
+  - Logistic Regression uses **StandardScaler** on the imputed feature matrix; tree models consume the raw imputed values.
+
+- **Train / test split**
+  - Main experiments use an 80/20 **stratified random split** on the 1% sample.  
+  - Additional scripts (`model_training_time_split.py`, `per_group_metrics.py`) explore:
+    - **Temporal generalization** (train on early 2020 → test on later months).  
+    - **Per-group metrics** (e.g., per-origin / per-airline performance at a fixed threshold).
+
+---
+
+## 🤖 Models & Evaluation
+
+### Models
+
+1. **Logistic Regression (balanced)**
+2. **Random Forest (balanced class weights)**
+3. **HistGradientBoosting (HGB)** for tabular data
+
+All models predict the binary label **Delayed (arrival delay ≥ 15 min)**.
+
+### Metrics
+
+- **Accuracy**
+- **Precision / Recall / F1**
+- **ROC-AUC**
+- **Average Precision (AP)** on the **Precision–Recall curve** (important under class imbalance).
+
+---
+
+## 📉 Baseline Performance (Operational-Only)
+
+### ROC – Baseline Models
 ![](outputs/plots/roc_curves.png)
 
-- ROC curves compare initial models trained without weather data.  
-- Logistic Regression and Random Forest achieve moderate AUC (~0.55).  
-- This baseline provides a reference for performance improvement once weather and feature engineering are added.  
+- With operational features only, models achieve **AUC ≈ 0.52–0.54**.  
+- They are **barely better than random** for this highly noisy task.
 
----
-
-### 6️⃣ ROC Curves – Weather-Enhanced Models
-![](outputs/plots/roc_curves_weather.png)
-
-- Models trained with weather variables show an **improvement in AUC from ~0.55 → 0.58**.  
-- Weather variables such as `temperature`, `wind speed`, and `pressure` contribute to better classification of delayed flights.  
-
----
-
-### 7️⃣ ROC Curves – All Combined Models
-![](outputs/plots/roc_curves_weather_all.png)
-
-- Combines baseline, weather-only, and feature-engineered models.  
-- **Histogram-based Gradient Boosting (HGB)** achieves the best AUC (~0.59).  
-- Indicates that while delay prediction remains a difficult problem, added context improves performance modestly.  
-
----
-
-### 8️⃣ Feature Importance (Random Forest – Base Model)
+### Random Forest Feature Importance – Baseline
 ![](outputs/plots/feature_importance_rf.png)
 
-- The most predictive features in the base model include:  
-  - **Route frequency** (flights per route)  
-  - **Scheduled departure time** (temporal pattern)  
-  - **Day of week**  
-- Weather variables were not yet included here.  
+- Most important baseline signals:
+  - `route_freq` – some routes have systematically higher/lower delay rates.  
+  - `Dest` and `Origin` – airport identity captures congestion and local processes.  
+  - `Month` and `DayOfWeek` – seasonality and weekday patterns.  
+  - `IATA_Code_Operating_Airline` – carrier-specific operations.
 
 ---
 
-### 9️⃣ Feature Importance (Random Forest – With Weather)
+## 🌦️ Weather + Engineered Models
+
+### ROC Curves – Weather + Engineered
+![](outputs/plots/roc_curves_weather.png)
+
+- Adding weather + engineered features increases AUC to around **0.58–0.59**:
+  - LogReg: AUC ≈ **0.577**  
+  - RF: AUC ≈ **0.564**  
+  - HGB: AUC ≈ **0.594**  
+
+Although still modest, this confirms that **weather and congestion structure add real predictive signal** on top of baseline features.
+
+### Precision–Recall Curves (Weather + Engineered)
+![](outputs/plots/pr_curve_logreg_weather_eng.png)  
+![](outputs/plots/pr_curve_rf_weather_eng.png)  
+![](outputs/plots/pr_curve_hgb_weather_eng.png)
+
+- Average Precision (AP) scores:
+  - LogReg: **0.228**  
+  - RF: **0.218**  
+  - HGB: **0.240**  
+- PR curves drop quickly: even our best model has **precision ≈ 0.25 when recall ≈ 0.3–0.4**.  
+- This reflects the difficulty of delay prediction: many “unexpected” delays are not explainable from coarse flight + daily weather variables alone.
+
+### Confusion Matrices (Default 0.5 Threshold)
+
+Baseline vs. weather-enhanced Logistic Regression:
+
+- **LogReg (baseline)** – random split  
+  - `TN=36,956`, `FP=35,879`, `FN=7,792`, `TP=8,632`  
+- **LogReg (weather + engineered)**  
+  - `TN=44,222`, `FP=28,613`, `FN=8,167`, `TP=8,257`
+
+HistGradientBoosting (weather + engineered):
+
+- `TN=72,518`, `FP=317`, `FN=16,294`, `TP=130`
+
+Interpretation:
+
+- **LogReg weather+eng** trades a bit of accuracy for a more balanced precision/recall.  
+- **HGB** with threshold 0.5 has high accuracy (it almost always predicts “no delay”) but essentially **misses most delayed flights** – good ROC-AUC but poor recall at that operating point.
+
+(Plots: `cm_logreg_baseline.png`, `cm_rf_baseline.png`, `cm_logreg_weather.png`, `cm_rf_weather.png`, `cm_hgb_weather.png`.)
+
+### Feature Importance – Weather + Engineered
 ![](outputs/plots/feature_importance_rf_weather.png)
 
-- After integrating weather data, the top predictors include:  
-  - **Route frequency**
-  - **Origin-day flight volume**
-  - **Temperature**
-  - **Wind speed**
-  - **Pressure**  
-- Weather features rank just below operational ones, confirming their incremental predictive power.
+- Once we add weather and congestion features, the **top predictors** become:
+  - `te_route` – historical delay rate of the route.
+  - `origin_day_volume` – flights per origin + date (congestion proxy).
+  - `route_freq` – pure traffic volume on the route.
+  - `Dest`, `Origin`, `DayOfWeek`, `te_origin_month`.  
+- Weather variables (`tavg`, `wspd`, `pres`, plus `dest_*`) show **non-zero but secondary importance**.  
+  - Weather helps, but structural/operational signals (route history + congestion) dominate.
 
 ---
 
-## ⚙️ Data Processing Pipeline
+## 📈 Quantitative Summary
 
-1. **Data Cleaning**
-   - Removed flights with missing or invalid delay data.  
-   - Dropped irrelevant columns (e.g., tail numbers, cancellation codes).  
-   - Standardized column names and converted time fields to datetime format.  
+Using the confusion matrices and ROC/PR curves, the main random-split results on the 1% sample are:
 
-2. **Weather Data Integration**
-   - Downloaded daily weather observations from the **Meteostat API** for each airport.  
-   - Merged weather features by airport and date.  
-   - Missing values were imputed using median interpolation.  
+| Model                  | Features                   | Accuracy | Precision | Recall |   F1   |  AUC  |   AP  |
+|:-----------------------|:---------------------------|:--------:|:---------:|:------:|:------:|:-----:|:-----:|
+| Logistic Regression    | Operational only           |  0.511   |  0.194    | 0.526  | 0.283  | 0.523 |   –   |
+| Random Forest          | Operational only           |  0.754   |  0.214    | 0.134  | 0.165  | 0.544 |   –   |
+| Logistic Regression    | + Weather + Engineered     |  0.591   |  0.224    | 0.503  | 0.309  | 0.577 | 0.228 |
+| Random Forest          | + Weather + Engineered     |  0.814   |  0.242    | 0.082  | 0.121  | 0.564 | 0.218 |
+| HistGradientBoosting   | + Weather + Engineered     | **0.814**| **0.291** | 0.008  | 0.015  | **0.594** | **0.240** |
 
-3. **Feature Engineering**
-   - `route_freq`: Number of flights per (origin, destination).  
-   - `origin_day_volume`: Number of flights per origin airport per day.  
-   - `is_weekend`: Boolean flag for weekend flights.  
-   - `temp_mean`, `wind_mean`, and `pressure_mean`: from merged weather.  
+Key takeaways:
 
-4. **Normalization & Encoding**
-   - Scaled numerical features using **StandardScaler**.  
-   - Encoded categorical features (e.g., airlines, airports) using **OneHotEncoder**.  
+- **ROC-AUC improves** from ~0.53 (baseline) to ~0.59 with weather + engineered features.  
+- **Logistic Regression** offers the best trade-off between accuracy and recall when using a fixed 0.5 threshold.  
+- **HGB** has the best AUC/AP but requires **careful threshold calibration**; at 0.5 it essentially never predicts delays.  
+- RF and HGB become especially useful when we **adjust the decision threshold** (via the PR-based sweep) for use cases that prefer high recall or high precision.
 
 ---
 
-## 🤖 Modeling Methods
+## ⚠️ Challenges & Limitations
 
-### Models Implemented
-1. **Logistic Regression (Baseline)**
-   - Interpretable linear model for binary classification.
-2. **Random Forest (Ensemble)**
-   - Nonlinear model capturing feature interactions.
-3. **HistGradientBoosting (HGB)**
-   - Gradient-boosted trees optimized for tabular data.
+1. **Low Predictive Ceiling**  
+   - Even the best model reaches only **AUC ≈ 0.59** and **AP ≈ 0.24**.  
+   - Many real-world delay drivers (air traffic control restrictions, crew constraints, maintenance, connecting passengers, etc.) are simply **not present** in public data.
 
-### Evaluation Metrics
-- **Accuracy**
-- **Precision**
-- **Recall**
-- **F1-Score**
-- **ROC-AUC**
+2. **Class Imbalance**  
+   - Only ~18% of flights are delayed, so a trivial “always on-time” classifier already looks good on accuracy.  
+   - We mitigate this via **class_weight="balanced"**, ROC/PR analysis, and threshold sweeps, but recall for the minority class remains challenging.
 
-### Validation
-- Train-test split (80/20).  
-- Stratified sampling to balance delay vs. non-delay classes.  
-- ROC and Precision-Recall curves used for diagnostic visualization.
+3. **Coarse Weather Resolution**  
+   - We use **daily** weather aggregates by airport; real operations depend on **hourly** or even finer-grained conditions (storms, microbursts, runway visibility).
 
----
+4. **Temporal & Network Effects**  
+   - Delays propagate through aircraft rotations and hub waves.  
+   - Our current models treat each flight independently and do not model flight-to-flight dependencies or aircraft/crew turn-around chains.
 
-## 📈 Preliminary Results
-
-| Model                  | Features                  | Accuracy | Precision | Recall | F1-score |  AUC  |
-|:-----------------------|:--------------------------|:--------:|:---------:|:------:|:-------:|:-----:|
-| Logistic Regression    | Operational only          |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
-| Random Forest          | Operational only          |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
-| Logistic Regression    | + Weather + Engineered    |  0.588   |   0.225   | **0.509** | 0.312 | 0.577 |
-| Random Forest          | + Weather + Engineered    |  0.784   |   0.237   | 0.082  |  0.122  | 0.560 |
-| HistGradientBoosting   | + Weather + Engineered    | **0.814** |  0.257   | 0.010  |  0.019  | **0.591** |
-
-
-**Interpretation:**
-- Weather and engineered features improve recall significantly for Logistic Regression.  
-- Histogram Gradient Boosting achieves the best AUC (0.59).  
-- Route-level and weather-based predictors jointly improve overall detection sensitivity.  
+5. **Heterogeneity Across Airlines & Airports**  
+   - Per-group analysis shows that some airlines and hubs are easier to model than others.  
+   - A single global model may underperform compared to **specialized models per region/airline**.
 
 ---
 
-## ⚠️ Current Challenges and Limitations
+## 🧠 Possible Next Steps
 
-Although the current pipeline successfully integrates flight and weather data and produces consistent results across models, several issues remain:
+Some directions we did **not** fully pursue (but would be natural extensions):
 
-1. **Low AUC / Model Performance Ceiling**  
-   - Even with additional weather and engineered features, the AUC only reaches about **0.59**.  
-   - This indicates the models capture some but not all underlying delay factors — suggesting that other variables (like air traffic control, carrier policies, or airport-level congestion) may be missing.
-
-2. **Imbalanced Classes**  
-   - Only around **18% of flights are delayed**, leading to bias toward the majority (non-delayed) class.  
-   - Models tend to have high accuracy but low recall for delays.
-
-3. **Temporal Dependency**  
-   - Flight delays often depend on time sequences (e.g., previous flight delays causing propagation).  
-   - Current models treat all rows independently, ignoring sequential or temporal correlations.
-
-4. **Weather Feature Granularity**  
-   - Daily-aggregated weather data may not fully represent real-time conditions at departure/arrival hours.  
-   - Hourly weather data could potentially improve sensitivity.
-
-5. **Operational Heterogeneity**  
-   - Airlines and airports behave differently; model performance varies by region and carrier.  
-   - Further stratified or per-airport modeling could improve robustness.
-
-These challenges explain why the results, while consistent, still have limited predictive power (AUC < 0.6) and motivate further experimentation.
-
----
-
-## 🧠 Next Steps
-- Add weather information for destination and route. 
-- Add **temporal validation** (train early months → test later months).  
-- Investigate **class imbalance** using SMOTE or reweighting.  
-- Explore **XGBoost / LightGBM** models for better recall.  
-- Build a **Streamlit dashboard** for interactive predictions.  
+- Pull **hourly weather** (or METAR data) to better capture storms and local extremes.  
+- Explicitly model **delay propagation** using lag features (previous flight delay on the same tail number / route) or sequence models.  
+- Train **airport- or airline-specific models**, or at least use per-group calibrated thresholds from the `per_group_metrics.py` analysis.  
+- Explore **gradient boosting libraries** like XGBoost/LightGBM on the full dataset.  
+- Build a small **Streamlit / Flask demo** to let users input a flight and see predicted delay probability + key drivers.
 
 ---
 
 ## 📤 Data Access
+
 You can download the **full datasets** from Google Drive:  
 📂 [CS506 Project Data (Google Drive)](https://drive.google.com/drive/folders/11Bs78yYzX7t18sY3JP_uk08K3PCpzmxg?usp=drive_link)
 
@@ -228,5 +268,5 @@ Contents:
 - `flights_cleaned.csv` (~3.8 GB)  
 - `weather_daily.csv` (~185 KB)  
 - `flights_with_weather_sample.parquet`  
+- (Optional) partitioned merged parquet files under `outputs/flights_with_weather/`  
 
----
