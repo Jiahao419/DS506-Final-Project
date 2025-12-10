@@ -16,7 +16,7 @@ data/
 !data/flights_sample_1pct.csv     # keep only the small sample file
 
 # ===== Models (too large for GitHub) =====
-outputs/models/
+outputs/
 
 # ===== Large parquet data =====
 outputs/*.parquet
