@@ -4,6 +4,22 @@
 
 ---
 
+## ✈️ Flight Delay Prediction using US DOT & Weather Data
+
+**Boston University – CS506: Data Science Tools & Applications**
+
+---
+
+### 📘 Project Overview
+
+This project predicts **flight delays** by combining **US DOT On-Time Performance** data with **daily origin & destination weather** and several **engineered operational features**.
+
+We study how airline, route, congestion, calendar effects, and coarse-grained weather jointly affect the probability that a flight arrives **15+ minutes late**.
+The goal is not to perfectly predict every delay (which is extremely hard with public data), but to build a **clean, reproducible modeling pipeline** and quantify **how much signal** we can extract from these factors.
+
+---
+
+
 ## 🔧 How to Build & Run the Project
 
 ### Requirements
@@ -85,21 +101,6 @@ make clean          # remove cs506_venv virtual environment
 > 📥 **Full data**
 > To fully reproduce the experiments, download `flights_cleaned.csv` and `weather_daily.csv`
 > from the Google Drive folder linked below and place them in the `data/` directory.
-
----
-
-## ✈️ Flight Delay Prediction using US DOT & Weather Data
-
-**Boston University – CS506: Data Science Tools & Applications**
-
----
-
-### 📘 Project Overview
-
-This project predicts **flight delays** by combining **US DOT On-Time Performance** data with **daily origin & destination weather** and several **engineered operational features**.
-
-We study how airline, route, congestion, calendar effects, and coarse-grained weather jointly affect the probability that a flight arrives **15+ minutes late**.
-The goal is not to perfectly predict every delay (which is extremely hard with public data), but to build a **clean, reproducible modeling pipeline** and quantify **how much signal** we can extract from these factors.
 
 ---
 
